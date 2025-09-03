@@ -9,10 +9,11 @@ export default function VerifySuccess() {
   useEffect(() => {
     Swal.fire({
       icon: "success",
-      title: "Registration successful!",
-      text: "Your account is now verified. Please log in.",
+      title: "🎉 Email Verified",
+      text: "Your account is now active. Please login to continue.",
+      confirmButtonText: "Go to Login",
     }).then(() => {
-      router.push("login"); // ya phir homepage pe bhejna ho to "/"
+      router.push("/login"); // redirect after alert
     });
   }, []);
 

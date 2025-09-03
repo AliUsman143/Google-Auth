@@ -76,53 +76,63 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    let user = await User.findOne({ email });
-    if (user) return res.json({ success: false, message: "User already exists" });
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ status: "fail", message: "User already exists" });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const token = crypto.randomBytes(32).toString("hex");
+    const user = await User.create({ name, email, password });
 
-    user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      verificationToken: token,
-      isVerified: false,
+    // generate token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    // verification link
+    const url = `http://localhost:5000/api/auth/verify-email?token=${token}`;
+
+    // send email
+    await sendEmail(user.email, "Verify your email", `Click here: ${url}`);
+
+    // ✅ send simple JSON response
+    res.status(201).json({
+      status: "success",
+      message: "User registered successfully, please check your email",
     });
-
-    await user.save();
-
-    const verifyLink = `http://localhost:5000/api/auth/verify/${token}`;
-    await sendEmail(
-      email,
-      "Verify your account",
-      `Hi ${name},\n\nPlease verify your account by clicking this link: ${verifyLink}`
-    );
-
-    res.json({ success: true, message: "Verification email sent!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ status: "error", message: "Server error" });
   }
 };
 
+// Email Verify
 exports.verifyEmail = async (req, res) => {
   try {
-    const { token } = req.params;
-    const user = await User.findOne({ verificationToken: token });
+    const { token } = req.query;
 
-    if (!user) return res.send("Invalid or expired token");
+    if (!token) {
+      return res.status(400).send("Invalid or missing token");
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(400).send("User not found");
+    }
+
+    if (user.isVerified) {
+      return res.redirect("http://localhost:3000/login");
+    }
 
     user.isVerified = true;
-    user.verificationToken = null;
     await user.save();
 
-    // redirect to frontend success page
-    res.redirect("http://localhost:3000/verify-success");
-  } catch (err) {
-    console.error(err);
-    res.send("Server error");
+    // ✅ Redirect to frontend success page
+    return res.redirect("http://localhost:3000/verify-success");
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send("Invalid or expired token");
   }
 };
+
 
 
