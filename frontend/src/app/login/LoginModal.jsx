@@ -1,178 +1,226 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-const LoginModal = ({ onClose, onLoginSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+export default function LoginModal({ onClose, onLoginSuccess }) {
+  const [view, setView] = useState("choice");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
     try {
-      if (isLogin) {
-        // Login logic
-        const response = await fetch('http://localhost:5000/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password
-          }),
-        });
+      let url = "";
+      let body = {};
 
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-          onLoginSuccess(result.data.user, result.token);
-        } else {
-          setError(result.message);
-        }
-      } else {
-        // Register logic
+      if (view === "login") {
+        url = "http://localhost:5000/api/auth/login";
+        body = { email: data.email, password: data.password };
+      } else if (view === "signup") {
         if (data.password !== data.confirmPassword) {
-          setError('Passwords do not match');
+          setError("Passwords do not match");
           setLoading(false);
           return;
         }
+        url = "http://localhost:5000/api/auth/register";
+        body = { name: data.name, email: data.email, password: data.password };
+      }
 
-        const response = await fetch('http://localhost:5000/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-            password: data.password
-          }),
-        });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-          onLoginSuccess(result.data.user, result.token);
-        } else {
-          setError(result.message);
-        }
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      if (result.status === "success") {
+        onLoginSuccess?.(result.data?.user, result.token);
+        onClose();
+      } else {
+        setError(result.message || "Request failed");
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error("Fetch error:", err);
+      setError("Could not connect to server");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold">
-            {isLogin ? 'Login' : 'Register'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            &times;
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 relative shadow-lg">
+        {/* Close */}
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
+        {/* Choice screen */}
+        {view === "choice" && (
+          <>
+            <h2 className="text-gray-900 font-extrabold text-xl mb-1">
+              Welcome!
+            </h2>
+            <p className="text-gray-700 text-sm mb-6">
+              Sign up or log in to continue
+            </p>
 
-          {!isLogin && (
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="name">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+            {/* Google */}
+            <button className="w-full border border-gray-300 hover:bg-gray-50 text-gray-900 font-normal py-2 rounded mb-3 flex items-center justify-center gap-2">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                alt="Google logo"
+                className="w-5 h-5"
               />
-            </div>
-          )}
+              Continue with Google
+            </button>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="email">
-              Email
-            </label>
+            {/* Divider */}
+            <div className="flex items-center mb-6">
+              <hr className="border-gray-300 flex-grow" />
+              <span className="text-gray-400 text-xs mx-3">or</span>
+              <hr className="border-gray-300 flex-grow" />
+            </div>
+
+            {/* Login / Signup buttons */}
+            <button
+              onClick={() => setView("login")}
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 rounded mb-3"
+            >
+              Log in
+            </button>
+            <button
+              onClick={() => setView("signup")}
+              className="w-full border border-gray-700 text-gray-900 font-normal py-2 rounded"
+            >
+              Sign up
+            </button>
+          </>
+        )}
+
+        {/* Login form */}
+        {view === "login" && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Login</h2>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
             <input
               type="email"
-              id="email"
               name="email"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Email"
+              className="w-full p-3 border rounded-md"
               required
             />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="password">
-              Password
-            </label>
             <input
               type="password"
-              id="password"
               name="password"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Password"
+              className="w-full p-3 border rounded-md"
               required
             />
-          </div>
 
-          {!isLogin && (
-            <div className="mb-6">
-              <label className="block text-gray-700 mb-2" htmlFor="confirmPassword">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors disabled:bg-blue-300"
-          >
-            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
-          </button>
-        </form>
-
-        <div className="p-6 border-t">
-          <p className="text-center">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-500 hover:underline"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 rounded"
             >
-              {isLogin ? 'Register here' : 'Login here'}
+              {loading ? "Logging in..." : "Login"}
             </button>
-          </p>
-        </div>
+
+            <p className="text-sm text-center mt-4">
+              Don’t have an account?{" "}
+              <button
+                type="button"
+                onClick={() => setView("signup")}
+                className="text-blue-500 hover:underline"
+              >
+                Sign up here
+              </button>
+            </p>
+          </form>
+        )}
+
+        {/* Signup form */}
+        {view === "signup" && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Sign Up</h2>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
+              className="w-full p-3 border rounded-md"
+              required
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              className="w-full p-3 border rounded-md"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              className="w-full p-3 border rounded-md"
+              required
+            />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              className="w-full p-3 border rounded-md"
+              required
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 rounded"
+            >
+              {loading ? "Signing up..." : "Sign Up"}
+            </button>
+
+            <p className="text-sm text-center mt-4">
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => setView("login")}
+                className="text-blue-500 hover:underline"
+              >
+                Login here
+              </button>
+            </p>
+          </form>
+        )}
+
+        {/* Terms */}
+        <p className="text-xs text-gray-500 mt-6 leading-tight text-center">
+          By signing up, you agree to our{" "}
+          <a href="#" className="text-pink-600 hover:underline font-semibold">
+            Terms and Conditions
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-pink-600 hover:underline font-semibold">
+            Privacy Policy
+          </a>
+          .
+        </p>
       </div>
     </div>
   );
-};
-
-export default LoginModal;
+}
