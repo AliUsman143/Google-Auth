@@ -1,23 +1,11 @@
 "use client";
-import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+
+import { useState } from "react";
 
 export default function LoginModal({ onClose, onLoginSuccess }) {
   const [view, setView] = useState("choice");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get("verified") === "true") {
-      Swal.fire({
-        icon: "success",
-        title: "Email Verified!",
-        text: "Your account is ready. Please login now.",
-      });
-      setView("login"); // redirect to login form directly
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,18 +41,9 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
       const result = await response.json();
       console.log("API Response:", result);
 
-      if (result.success) {
-        if (view === "signup") {
-          Swal.fire({
-            icon: "success",
-            title: "Verify your email",
-            text: "We sent a verification link to your inbox. Please verify before login.",
-          });
-          setView("login"); // switch back to login
-        } else {
-          onLoginSuccess?.(result.data?.user, result.token);
-          onClose();
-        }
+      if (result.status === "success") {
+        onLoginSuccess?.(result.data?.user, result.token);
+        onClose();
       } else {
         setError(result.message || "Request failed");
       }
