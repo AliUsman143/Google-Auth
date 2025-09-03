@@ -12,7 +12,7 @@ export default function VerifySuccess() {
       title: "Registration successful!",
       text: "Your account is now verified. Please log in.",
     }).then(() => {
-      router.push("/login"); // ya phir homepage pe bhejna ho to "/"
+      router.push("login"); // ya phir homepage pe bhejna ho to "/"
     });
   }, []);
 

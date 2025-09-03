@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import LoginModal from '../login/LoginModal';
+import LoginModal from './LoginModal';
 
 const Navbar = () => {
   const [user, setUser] = useState(null);

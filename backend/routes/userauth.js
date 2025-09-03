@@ -1,11 +1,12 @@
 
 const express = require("express");
-const { register, verifyEmail } = require("../controllers/authController");
+const { register, verifyEmail,loginUser } = require("../controllers/authController");
 
 const router = express.Router();
 
 router.post("/register", register);
 router.get("/verify/:token", verifyEmail);
+router.post("/login", loginUser);
 
 module.exports = router;
 
@@ -16,6 +17,6 @@ module.exports = router;
 // const router = express.Router();
 
 // router.post('/register', register);
-// router.post('/login', login);
+
 
 // module.exports = router;
