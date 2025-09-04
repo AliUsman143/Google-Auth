@@ -8,18 +8,10 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
+  console.log("Search params:", Array.from(searchParams.entries()));
   const [resetToken, setResetToken] = useState("");
 
-  // useEffect(() => {
-  //   if (searchParams.get("verified") === "true") {
-  //     Swal.fire({
-  //       icon: "success",
-  //       title: "Email Verified!",
-  //       text: "Your account is ready. Please login now.",
-  //     });
-  //     setView("/"); // direct login form
-  //   }
-  // }, [searchParams]);
+
   useEffect(() => {
     // Email verify -> show login
     if (searchParams.get("verified") === "true") {
@@ -34,7 +26,9 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
     // Password reset -> open reset view with token
     if (searchParams.get("reset") === "true") {
       const token = searchParams.get("token") || "";
+        console.log("Reset token found:", token);
       if (token) {
+        console.log("Reset token found:", token);
         setResetToken(token);
         setView("reset");
       }
@@ -127,7 +121,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
           text: "If that email exists, a reset link has been sent.",
         }).then(() => {
           // Go back to login or home, your choice
-          setView("login");
+          window.location.href = "/";
         });
       } else {
         setError(result.message || "Something went wrong");
