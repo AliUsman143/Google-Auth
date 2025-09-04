@@ -11,7 +11,6 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
   console.log("Search params:", Array.from(searchParams.entries()));
   const [resetToken, setResetToken] = useState("");
 
-
   useEffect(() => {
     // Email verify -> show login
     if (searchParams.get("verified") === "true") {
@@ -26,9 +25,7 @@ export default function AuthModal({ onClose, onLoginSuccess }) {
     // Password reset -> open reset view with token
     if (searchParams.get("reset") === "true") {
       const token = searchParams.get("token") || "";
-        console.log("Reset token found:", token);
       if (token) {
-        console.log("Reset token found:", token);
         setResetToken(token);
         setView("reset");
       }

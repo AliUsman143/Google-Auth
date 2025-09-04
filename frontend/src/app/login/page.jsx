@@ -3,7 +3,7 @@
 import { useState } from "react";
 import AuthModal from "../components/AuthModal";
 
-export default  function LoginPage() {
+export default function LoginPage() {
   const [showModal, setShowModal] = useState(true);
 
   const handleLoginSuccess = (userData, token) => {
@@ -18,7 +18,9 @@ export default  function LoginPage() {
       {showModal && (
         <AuthModal
           onClose={() => setShowModal(false)}
-          onLoginSuccess={handleLoginSuccess}
+          onLoginSuccess={(user, token) => {
+            console.log("Logged in:", user);
+          }}
         />
       )}
     </>

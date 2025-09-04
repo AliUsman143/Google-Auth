@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import AuthModal from "./AuthModal";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -15,7 +17,12 @@ export default function Navbar() {
       setShowModal(true);
       localStorage.removeItem("showLoginAfterVerify");
     }
-  }, []);
+
+    // ✅ If reset link is clicked from email
+    if (searchParams.get("reset") === "true" && searchParams.get("token")) {
+      setShowModal(true); // open modal
+    }
+  }, [searchParams]);
 
   const handleLoginSuccess = (userData, token) => {
     localStorage.setItem("token", token);
