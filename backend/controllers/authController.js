@@ -134,5 +134,79 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
+// ✅ Forgot Password: send reset link
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ status: "fail", message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // For security, don't reveal whether user exists
+      return res.json({ status: "success", message: "If that email exists, a reset link was sent" });
+    }
+
+    // Create short-lived JWT reset token
+    const token = jwt.sign(
+      { id: user._id, type: "reset" },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    // Link points to your frontend to show reset form
+    const resetUrl = `http://localhost:3000/?reset=true&token=${token}`;
+
+    await sendEmail(
+      user.email,
+      "Reset your password",
+      `Click the link to reset your password: ${resetUrl}`
+    );
+
+    return res.json({
+      status: "success",
+      message: "If that email exists, a reset link was sent",
+    });
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ status: "error", message: "Server error" });
+  }
+};
+
+// ✅ Reset Password: verify token and update password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ status: "fail", message: "Token and new password are required" });
+    }
+
+    // Verify token
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(400).json({ status: "fail", message: "Invalid or expired token" });
+    }
+
+    if (payload.type !== "reset") {
+      return res.status(400).json({ status: "fail", message: "Invalid token type" });
+    }
+
+    const user = await User.findById(payload.id);
+    if (!user) {
+      return res.status(400).json({ status: "fail", message: "User not found" });
+    }
+
+    // Update password (assumes your User model hashes on save)
+    user.password = password;
+    await user.save();
+
+    return res.json({ status: "success", message: "Password updated successfully. Please login." });
+  } catch (err) {
+    console.error("Reset Password Error:", err);
+    res.status(500).json({ status: "error", message: "Server error" });
+  }
+};
+
 
 
